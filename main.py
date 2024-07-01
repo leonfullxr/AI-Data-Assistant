@@ -25,8 +25,6 @@ with st.sidebar:
     st.write('*Your Data Science Adventure begins with an CSV File.*')
     st.caption('**Upload your CSV File and I will help you with the rest.**')
     
-    
-    
     st.divider()
     
     st.caption("<p style ='text-align:center'> Made by leonfullxr. </p>", unsafe_allow_html=True)
@@ -47,7 +45,7 @@ if st.session_state.clicked[1]:
         df = pd.read_csv(user_csv, low_memory=False)
 
         # Large language model
-        llm = OpenAI(temperature=0) # Set the temperature to 0 to get deterministic results, no randomness
+        llm = OpenAI(temperature = 0) # Set the temperature to 0 to get deterministic results, no randomness
 
         # Function sidebar
         @st.cache_data
@@ -81,6 +79,27 @@ if st.session_state.clicked[1]:
             st.write(new_features)
             return
         
+        @st.cache_data
+        def function_question_variable():
+            st.line_chart(df, y =[user_question_variable])
+            summary_statistics = pandas_agent.run(f"Give me a summary of the statistics of {user_question_variable}")
+            st.write(summary_statistics)
+            normality = pandas_agent.run(f"Check for normality or specific distribution shapes of {user_question_variable}")
+            st.write(normality)
+            outliers = pandas_agent.run(f"Assess the presence of outliers of {user_question_variable}")
+            st.write(outliers)
+            trends = pandas_agent.run(f"Analyse trends, seasonality, and cyclic patterns of {user_question_variable}")
+            st.write(trends)
+            missing_values = pandas_agent.run(f"Determine the extent of missing values of {user_question_variable}")
+            st.write(missing_values)
+            return
+        
+        @st.cache_data
+        def function_question_dataframe():
+            dataframe_info = pandas_agent.run(user_question_dataframe)
+            st.write(dataframe_info)
+            return
+        
         # Main
         st.header('Exploratory Data Analysis')
         st.subheader('General information about the dataset')
@@ -92,6 +111,14 @@ if st.session_state.clicked[1]:
         function_agent()
         
         st.subheader('Variable of study')
-        user_question = st.text_input("What variable would you like to explore?")
-# Main
-        
+        user_question_variable = st.text_input("What variable would you like to explore?")
+        if user_question_variable is not None and user_question_variable != "":
+            function_question_variable()
+            st.subheader('Further study')
+            
+        if user_question_variable:
+            user_question_dataframe = st.text_input( "Is there anything else you would like to know about your dataframe?")
+            if user_question_dataframe is not None and user_question_dataframe not in ("","no","No"):
+                function_question_dataframe()
+            if user_question_dataframe in ("no", "No"):
+                st.write("")
