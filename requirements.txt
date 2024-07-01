@@ -5,3 +5,6 @@ pandas
 python-dotenv
 seaborn
 streamlit
+langchain
+langchain_experimental
+langchain_community
