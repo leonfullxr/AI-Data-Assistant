@@ -13,17 +13,14 @@ from dotenv import load_dotenv, find_dotenv
 os.environ['OPENAI_API_KEY'] = api_key
 load_dotenv(find_dotenv())
 
-# Large language model
-llm = OpenAI(temperature=0) # Set the temperature to 0 to get deterministic results, no randomness
-
-# Main
-
+# Title
 st.title('AI Assistant for Data Science')
-st.header('Welcome to the Ai Assistant for Data Science!')
-st.subheader('Solution')
+st.header('Welcome to the AI Assistant for Data Science!')
+
+# Welcoming message
 st.write('Hello, I am your AI Assistant and I am here to help you with your Data Science Projects.')
 
-
+# Explanation sidebar
 with st.sidebar:
     st.write('*Your Data Science Adventure begins with an CSV File.*')
     st.caption('**Upload your CSV File and I will help you with the rest.**')
@@ -33,30 +30,68 @@ with st.sidebar:
     st.divider()
     
     st.caption("<p style ='text-align:center'> Made by leonfullxr. </p>", unsafe_allow_html=True)
-    
+
 # Initialise the key in session state
 if 'clicked' not in st.session_state:
     st.session_state.clicked = {1:False}
-    
+
 # Function to update the value in session state
 def clicked(button):
     st.session_state.clicked[button] = True
 st.button("Let's get started", on_click=clicked, args=[1])
 if st.session_state.clicked[1]:
-    st.header('Exploratory Data Analysis Part')
-    st.subheader('Solution')
-    
     user_csv = st.file_uploader("Upload your CSV file", type="csv")
 
     if user_csv is not None:
         user_csv.seek(0)
         df = pd.read_csv(user_csv, low_memory=False)
+
+        # Large language model
+        llm = OpenAI(temperature=0) # Set the temperature to 0 to get deterministic results, no randomness
+
+        # Function sidebar
+        @st.cache_data
+        def steps_eda():
+            steps_eda = llm('What are the steps of EDA')
+            return steps_eda
+
+        # Pandas agent
+        pandas_agent = create_pandas_dataframe_agent(llm, df, verbose = True, allow_dangerous_code = True)
+
+        # Functions main
+        @st.cache_data
+        def function_agent():
+            st.write("**Data Overview**")
+            st.write("The first rows of your dataset look like this:")
+            st.write(df.head())
+            st.write("**Data Cleaning**")
+            columns_df = pandas_agent.run("What are the meaning of the columns?")
+            st.write(columns_df)
+            missing_values = pandas_agent.run("How many missing values does this dataframe have? Start the answer with 'There are'")
+            st.write(missing_values)
+            duplicates = pandas_agent.run("Are there any duplicate values and if so where?")
+            st.write(duplicates)
+            st.write("**Data Summarisation**")
+            st.write(df.describe())
+            correlation_analysis = pandas_agent.run("Calculate correlations between numerical variables to identify potential relationships.")
+            st.write(correlation_analysis)
+            outliers = pandas_agent.run("Identify outliers in the data that may be erroneous or that may have a significant impact on the analysis.")
+            st.write(outliers)
+            new_features = pandas_agent.run("What new features would be interesting to create?.")
+            st.write(new_features)
+            return
         
-with st.sidebar:
-    with st.expander('What are the steps of EDA'):
-        st.write(llm('What are the steps of EDA'))
+        # Main
+        st.header('Exploratory Data Analysis')
+        st.subheader('General information about the dataset')
         
-pandas_agent = create_pandas_dataframe_agent(llm, df, verbose = True)
-question = 'What is the meaning of the columns'
-columns_meaning = pandas_agent.run(question)
-st.write(columns_meaning)
+        with st.sidebar:
+            with st.expander('What are the steps of EDA'):
+                st.write(steps_eda())
+        
+        function_agent()
+        
+        st.subheader('Variable of study')
+        user_question = st.text_input("What variable would you like to explore?")
+# Main
+        
